@@ -1,0 +1,840 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Clear the Noise — Data Driven Decisions</title>
+<meta name="description" content="A free 5-minute clarity check for your business finances." />
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;1,9..40,300&display=swap" rel="stylesheet" />
+<script src="https://cdn.jsdelivr.net/npm/@emailjs/browser@3/dist/email.min.js"></script>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --teal:#3589A1;--teal-dark:#2A6E84;--teal-light:#EBF5F8;--teal-mid:#C5E2EB;
+  --navy:#000A1F;--navy-80:#1A2235;--ink:#1C1C1C;--muted:#5A6370;--hint:#9AA0A8;
+  --surface:#F7F5F1;--card:#FFFFFF;--border:#E4E1DA;--border-em:#C8C3B8;
+  --red:#C94040;--red-bg:#FDF0F0;--amber:#B87C12;--amber-bg:#FEF8EC;
+  --green:#2D6A1F;--green-bg:#EDF6E8;
+  --r-sm:6px;--r-md:10px;--r-lg:16px;--r-xl:24px;
+  --shadow:0 1px 3px rgba(0,10,31,.06),0 4px 16px rgba(0,10,31,.06);
+  --shadow-lg:0 2px 8px rgba(0,10,31,.08),0 12px 40px rgba(0,10,31,.10);
+}
+html{scroll-behavior:smooth}
+body{font-family:'DM Sans',sans-serif;background:var(--surface);color:var(--ink);min-height:100vh;font-size:16px;line-height:1.6;-webkit-font-smoothing:antialiased}
+.app{min-height:100vh;display:flex;flex-direction:column}
+.topbar{background:var(--navy);padding:0 24px;height:56px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:100}
+.topbar-logo{font-size:13px;font-weight:500;color:rgba(255,255,255,.9);letter-spacing:.03em;text-decoration:none}
+.topbar-logo span{color:var(--teal)}
+.topbar-tag{font-size:11px;color:rgba(255,255,255,.4);letter-spacing:.08em;text-transform:uppercase}
+.main{flex:1;display:flex;align-items:flex-start;justify-content:center;padding:40px 16px 80px}
+.container{width:100%;max-width:580px}
+.progress-wrap{height:3px;background:var(--border);border-radius:3px;margin-bottom:36px;overflow:hidden}
+.progress-fill{height:100%;background:var(--teal);border-radius:3px;transition:width .5s cubic-bezier(.4,0,.2,1);width:0%}
+.screen{display:none;animation:fadeUp .35s ease both}
+.screen.active{display:block}
+@keyframes fadeUp{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:translateY(0)}}
+/* Entry card */
+.entry-card{background:var(--card);border-radius:var(--r-xl);box-shadow:var(--shadow-lg);overflow:hidden}
+.entry-hero{background:var(--navy);padding:48px 40px 40px;position:relative;overflow:hidden}
+.entry-hero::before{content:'';position:absolute;top:-60px;right:-60px;width:220px;height:220px;border-radius:50%;background:var(--teal);opacity:.08}
+.entry-hero::after{content:'';position:absolute;bottom:-40px;left:20px;width:140px;height:140px;border-radius:50%;background:var(--teal);opacity:.05}
+.entry-eyebrow{display:inline-flex;align-items:center;gap:8px;font-size:11px;font-weight:500;letter-spacing:.1em;text-transform:uppercase;color:var(--teal);margin-bottom:16px}
+.entry-eyebrow-dot{width:6px;height:6px;border-radius:50%;background:var(--teal)}
+.entry-title{font-family:'Instrument Serif',serif;font-size:clamp(1.9rem,5vw,2.5rem);line-height:1.15;color:#fff;font-weight:400;margin-bottom:14px;position:relative;z-index:1}
+.entry-title em{font-style:italic;color:var(--teal-mid)}
+.entry-subtitle{font-size:15px;line-height:1.65;color:rgba(255,255,255,.65);position:relative;z-index:1;max-width:440px}
+.entry-pills{display:flex;flex-wrap:wrap;gap:8px;margin-top:24px;position:relative;z-index:1}
+.entry-pill{font-size:12px;padding:5px 12px;border-radius:100px;border:1px solid rgba(53,137,161,.4);color:rgba(255,255,255,.7);display:flex;align-items:center;gap:5px}
+.entry-pill::before{content:'✓';color:var(--teal);font-size:11px}
+.entry-body{padding:36px 40px 40px}
+.entry-body h3{font-size:15px;font-weight:500;color:var(--ink);margin-bottom:20px}
+.field-group{display:flex;flex-direction:column;gap:12px;margin-bottom:20px}
+.field-label{font-size:12px;font-weight:500;color:var(--muted);margin-bottom:5px;letter-spacing:.03em;text-transform:uppercase}
+.field-input{width:100%;height:48px;padding:0 16px;font-family:'DM Sans',sans-serif;font-size:15px;color:var(--ink);background:var(--surface);border:1.5px solid var(--border);border-radius:var(--r-md);outline:none;transition:border-color .2s,box-shadow .2s}
+.field-input:focus{border-color:var(--teal);box-shadow:0 0 0 3px rgba(53,137,161,.12)}
+.field-input.error{border-color:var(--red);box-shadow:0 0 0 3px rgba(201,64,64,.10)}
+textarea.field-input{height:auto;min-height:80px;padding:12px 16px;resize:vertical;line-height:1.55}
+.entry-cta{width:100%;height:52px;background:var(--teal);color:#fff;font-family:'DM Sans',sans-serif;font-size:15px;font-weight:500;border:none;border-radius:var(--r-md);cursor:pointer;transition:background .2s,transform .1s;display:flex;align-items:center;justify-content:center;gap:8px}
+.entry-cta:hover{background:var(--teal-dark)}
+.entry-cta:active{transform:scale(.99)}
+.entry-privacy{margin-top:12px;font-size:11.5px;color:var(--hint);text-align:center;line-height:1.5}
+/* Consent checkbox */
+.consent-row{display:flex;align-items:flex-start;gap:10px;margin-bottom:16px}
+.consent-row input[type=checkbox]{margin-top:3px;width:16px;height:16px;flex-shrink:0;accent-color:var(--teal);cursor:pointer}
+.consent-label{font-size:12px;color:var(--muted);line-height:1.5;cursor:pointer}
+.consent-label a{color:var(--teal);text-decoration:none}
+.consent-label a:hover{text-decoration:underline}
+/* Steps */
+.step-header{margin-bottom:28px}
+.step-badge{display:inline-flex;align-items:center;gap:6px;font-size:11px;font-weight:500;letter-spacing:.08em;text-transform:uppercase;color:var(--teal);margin-bottom:10px}
+.step-badge-num{width:20px;height:20px;border-radius:50%;background:var(--teal);color:#fff;font-size:10px;font-weight:600;display:flex;align-items:center;justify-content:center}
+.step-title{font-family:'Instrument Serif',serif;font-size:clamp(1.4rem,4vw,1.75rem);font-weight:400;color:var(--ink);line-height:1.25;margin-bottom:6px}
+.step-sub{font-size:14px;color:var(--muted);line-height:1.55}
+.q-block{margin-bottom:24px}
+.q-label{font-size:14px;font-weight:500;color:var(--ink);margin-bottom:10px;line-height:1.4}
+.chips{display:flex;flex-wrap:wrap;gap:8px}
+.chip{font-family:'DM Sans',sans-serif;font-size:13.5px;font-weight:400;padding:8px 16px;border-radius:100px;border:1.5px solid var(--border);background:var(--card);color:var(--muted);cursor:pointer;transition:all .15s;user-select:none;line-height:1.3}
+.chip:hover{border-color:var(--teal);color:var(--teal-dark);background:var(--teal-light)}
+.chip.sel{background:var(--navy);border-color:var(--navy);color:#fff;font-weight:500}
+.toggles{display:grid;grid-template-columns:repeat(auto-fit,minmax(100px,1fr));gap:8px}
+.toggle{font-family:'DM Sans',sans-serif;font-size:13.5px;text-align:center;padding:11px 12px;border-radius:var(--r-md);border:1.5px solid var(--border);background:var(--card);color:var(--muted);cursor:pointer;transition:all .15s;user-select:none;line-height:1.3}
+.toggle:hover{border-color:var(--teal);color:var(--teal-dark);background:var(--teal-light)}
+.toggle.sel{background:var(--navy);border-color:var(--navy);color:#fff;font-weight:500}
+.shake{animation:shake .35s ease}
+@keyframes shake{0%,100%{transform:translateX(0)}25%{transform:translateX(-6px)}75%{transform:translateX(6px)}}
+.field-err{outline:2px solid var(--red);outline-offset:3px;border-radius:var(--r-md)}
+.divider{height:1px;background:var(--border);margin:24px 0}
+/* Nav */
+.nav-row{display:flex;gap:10px;margin-top:32px}
+.btn-back{height:48px;padding:0 20px;background:transparent;border:1.5px solid var(--border);border-radius:var(--r-md);font-family:'DM Sans',sans-serif;font-size:14px;color:var(--muted);cursor:pointer;transition:all .15s;white-space:nowrap}
+.btn-back:hover{border-color:var(--border-em);color:var(--ink)}
+.btn-next{flex:1;height:48px;background:var(--navy);border:none;border-radius:var(--r-md);font-family:'DM Sans',sans-serif;font-size:15px;font-weight:500;color:#fff;cursor:pointer;transition:background .2s,transform .1s;display:flex;align-items:center;justify-content:center;gap:6px}
+.btn-next:hover{background:var(--navy-80)}
+.btn-next:active{transform:scale(.99)}
+.btn-generate{width:100%;height:56px;background:var(--teal);border:none;border-radius:var(--r-md);font-family:'DM Sans',sans-serif;font-size:16px;font-weight:500;color:#fff;cursor:pointer;transition:background .2s,transform .1s;display:flex;align-items:center;justify-content:center;gap:8px;margin-top:32px}
+.btn-generate:hover{background:var(--teal-dark)}
+.btn-generate:active{transform:scale(.99)}
+.btn-generate:disabled{opacity:.5;cursor:not-allowed}
+/* Loading */
+.loading-wrap{text-align:center;padding:60px 24px}
+.loading-icon{width:56px;height:56px;border-radius:50%;background:var(--teal-light);display:flex;align-items:center;justify-content:center;margin:0 auto 24px}
+.loading-icon svg{animation:spin 1.4s linear infinite}
+@keyframes spin{from{transform:rotate(0deg)}to{transform:rotate(360deg)}}
+.loading-title{font-family:'Instrument Serif',serif;font-size:1.5rem;color:var(--ink);margin-bottom:8px;font-weight:400}
+.loading-sub{font-size:14px;color:var(--muted);line-height:1.6}
+.loading-dots{display:flex;justify-content:center;gap:6px;margin-top:20px}
+.loading-dot{width:7px;height:7px;border-radius:50%;background:var(--teal);animation:dotPulse 1.3s ease-in-out infinite}
+.loading-dot:nth-child(2){animation-delay:.2s}
+.loading-dot:nth-child(3){animation-delay:.4s}
+@keyframes dotPulse{0%,80%,100%{opacity:.25;transform:scale(.8)}40%{opacity:1;transform:scale(1)}}
+/* Results */
+.results-header{background:var(--navy);border-radius:var(--r-xl) var(--r-xl) 0 0;padding:36px 36px 32px;position:relative;overflow:hidden}
+.results-header::before{content:'';position:absolute;top:-50px;right:-50px;width:180px;height:180px;border-radius:50%;background:var(--teal);opacity:.10}
+.results-eyebrow{font-size:11px;font-weight:500;letter-spacing:.1em;text-transform:uppercase;color:var(--teal);margin-bottom:10px}
+.results-name{font-size:13px;color:rgba(255,255,255,.5);margin-bottom:4px}
+.results-headline{font-family:'Instrument Serif',serif;font-size:clamp(1.3rem,4vw,1.7rem);line-height:1.2;color:#fff;font-weight:400;position:relative;z-index:1}
+.results-body{background:var(--card);border-radius:0 0 var(--r-xl) var(--r-xl);padding:32px 36px 36px;box-shadow:var(--shadow-lg)}
+.snapshot-text{font-size:15px;line-height:1.7;color:var(--muted);margin-bottom:8px}
+.section-label{font-size:10.5px;font-weight:600;letter-spacing:.12em;text-transform:uppercase;color:var(--hint);margin-bottom:10px;margin-top:28px}
+.flag-item{display:flex;align-items:flex-start;gap:10px;padding:11px 14px;border-radius:var(--r-md);margin-bottom:8px;border:1px solid transparent}
+.flag-item.red{background:var(--red-bg);border-color:rgba(201,64,64,.12)}
+.flag-item.amber{background:var(--amber-bg);border-color:rgba(184,124,18,.12)}
+.flag-item.green{background:var(--green-bg);border-color:rgba(45,106,31,.12)}
+.flag-dot{width:8px;height:8px;border-radius:50%;flex-shrink:0;margin-top:5px}
+.flag-dot.red{background:var(--red)}
+.flag-dot.amber{background:var(--amber)}
+.flag-dot.green{background:var(--green)}
+.flag-text{font-size:13.5px;line-height:1.5;color:var(--ink)}
+.one-number-box{background:var(--teal-light);border:1.5px solid var(--teal-mid);border-radius:var(--r-lg);padding:18px 20px;display:flex;gap:16px;align-items:flex-start}
+.one-number-icon{width:38px;height:38px;border-radius:var(--r-sm);background:var(--teal);display:flex;align-items:center;justify-content:center;flex-shrink:0;color:#fff;font-size:16px;font-weight:600}
+.one-number-label{font-size:14px;font-weight:600;color:var(--teal-dark);margin-bottom:3px}
+.one-number-why{font-size:13px;color:var(--teal-dark);opacity:.8;line-height:1.5}
+.action-item{display:flex;gap:14px;padding:14px 0;border-bottom:1px solid var(--border)}
+.action-item:last-child{border-bottom:none}
+.action-num{width:26px;height:26px;border-radius:50%;background:var(--surface);border:1.5px solid var(--border);display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:600;color:var(--teal);flex-shrink:0;margin-top:1px}
+.action-title{font-size:14px;font-weight:500;color:var(--ink);margin-bottom:3px;line-height:1.4}
+.action-detail{font-size:13px;color:var(--muted);line-height:1.5}
+.reframe-box{background:var(--surface);border-left:3px solid var(--teal);border-radius:0 var(--r-md) var(--r-md) 0;padding:16px 18px;margin-top:4px}
+.reframe-text{font-family:'Instrument Serif',serif;font-size:1.05rem;font-style:italic;color:var(--ink);line-height:1.6}
+/* Full disclaimer box */
+.disclaimer-full{margin-top:24px;padding:16px 18px;background:var(--amber-bg);border:1px solid rgba(184,124,18,.18);border-radius:var(--r-md)}
+.disclaimer-full-title{font-size:11px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--amber);margin-bottom:8px}
+.disclaimer-full-text{font-size:11.5px;color:var(--muted);line-height:1.65}
+.disclaimer-full-text strong{color:var(--ink)}
+.email-sent{display:flex;align-items:center;gap:10px;padding:12px 16px;background:var(--green-bg);border:1px solid rgba(45,106,31,.15);border-radius:var(--r-md);margin-top:16px;font-size:13px;color:var(--green)}
+.email-sent-dot{width:8px;height:8px;border-radius:50%;background:var(--green);flex-shrink:0}
+/* Upsell */
+.upsell-section{margin-top:32px;background:var(--navy);border-radius:var(--r-xl);padding:32px 36px;position:relative;overflow:hidden}
+.upsell-section::before{content:'';position:absolute;bottom:-40px;right:-40px;width:200px;height:200px;border-radius:50%;background:var(--teal);opacity:.08}
+.upsell-tag{display:inline-block;font-size:10px;font-weight:600;letter-spacing:.1em;text-transform:uppercase;color:var(--teal);background:rgba(53,137,161,.12);padding:4px 10px;border-radius:100px;margin-bottom:14px}
+.upsell-title{font-family:'Instrument Serif',serif;font-size:1.4rem;color:#fff;font-weight:400;line-height:1.25;margin-bottom:10px;position:relative;z-index:1}
+.upsell-body{font-size:14px;color:rgba(255,255,255,.65);line-height:1.65;margin-bottom:20px;position:relative;z-index:1}
+.upsell-options{display:flex;flex-direction:column;gap:10px;position:relative;z-index:1}
+.upsell-btn-primary{display:flex;align-items:center;justify-content:space-between;padding:16px 20px;background:var(--teal);border:none;border-radius:var(--r-md);cursor:pointer;transition:background .2s;text-decoration:none}
+.upsell-btn-primary:hover{background:var(--teal-dark)}
+.upsell-btn-primary-label{font-size:14px;font-weight:500;color:#fff;display:block;margin-bottom:2px}
+.upsell-btn-primary-price{font-size:12px;color:rgba(255,255,255,.7)}
+.upsell-btn-primary-arrow{color:#fff;font-size:18px;opacity:.8;flex-shrink:0}
+.upsell-btn-secondary{display:flex;align-items:center;justify-content:space-between;padding:16px 20px;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.12);border-radius:var(--r-md);cursor:pointer;transition:background .2s;text-decoration:none}
+.upsell-btn-secondary:hover{background:rgba(255,255,255,.10)}
+.upsell-btn-secondary-label{font-size:14px;font-weight:500;color:rgba(255,255,255,.9);display:block;margin-bottom:2px}
+.upsell-btn-secondary-price{font-size:12px;color:rgba(255,255,255,.5)}
+.upsell-btn-secondary-arrow{color:rgba(255,255,255,.4);font-size:18px;flex-shrink:0}
+/* Footer disclaimer */
+.footer-disclaimer{background:var(--navy);border-top:1px solid rgba(255,255,255,.06);padding:20px 24px}
+.footer-disclaimer-text{font-size:10.5px;color:rgba(255,255,255,.22);line-height:1.7;text-align:center;max-width:640px;margin:0 auto}
+.site-footer{background:var(--navy);padding:20px 24px 28px;text-align:center}
+.footer-logo{font-size:13px;font-weight:500;color:rgba(255,255,255,.5);letter-spacing:.03em;margin-bottom:6px}
+.footer-logo span{color:var(--teal)}
+.footer-copy{font-size:11px;color:rgba(255,255,255,.25);margin-bottom:16px}
+@media(max-width:600px){
+  .main{padding:24px 12px 60px}
+  .entry-hero{padding:36px 24px 32px}
+  .entry-body{padding:28px 24px 32px}
+  .results-header{padding:28px 24px 26px}
+  .results-body{padding:24px 24px 28px}
+  .upsell-section{padding:28px 24px}
+  .toggles{grid-template-columns:1fr 1fr}
+}
+</style>
+</head>
+<body>
+<div class="app">
+
+<nav class="topbar">
+  <a href="https://www.datadriven.coach" class="topbar-logo">data<span>driven</span>.coach</a>
+  <span class="topbar-tag">Free clarity check</span>
+</nav>
+
+<main class="main">
+<div class="container">
+  <div class="progress-wrap"><div class="progress-fill" id="progress"></div></div>
+
+  <!-- SCREEN 0: Entry -->
+  <div class="screen active" id="screen-0">
+    <div class="entry-card">
+      <div class="entry-hero">
+        <div class="entry-eyebrow"><span class="entry-eyebrow-dot"></span>Free · 5 minutes · No jargon</div>
+        <h1 class="entry-title">Cut through the noise.<br><em>Know your numbers.</em></h1>
+        <p class="entry-subtitle">Answer 5 quick questions and get a personalized snapshot of where your business finances actually stand — plus your next three steps.</p>
+        <div class="entry-pills">
+          <span class="entry-pill">Clarity check</span>
+          <span class="entry-pill">Red flag scan</span>
+          <span class="entry-pill">Action plan</span>
+          <span class="entry-pill">Results by email</span>
+        </div>
+      </div>
+      <div class="entry-body">
+        <h3>Where should we send your results?</h3>
+        <div class="field-group">
+          <div>
+            <div class="field-label">First name</div>
+            <input type="text" class="field-input" id="inp-name" placeholder="Your first name" autocomplete="given-name" />
+          </div>
+          <div>
+            <div class="field-label">Email address</div>
+            <input type="email" class="field-input" id="inp-email" placeholder="you@yourbusiness.com" autocomplete="email" />
+          </div>
+        </div>
+        <div class="consent-row">
+          <input type="checkbox" id="consent-check" />
+          <label class="consent-label" for="consent-check">
+            I understand this tool is for <strong>educational and informational purposes only</strong> and does not constitute financial, legal, or professional advice. I have read and agree to the <a href="#disclaimer-section" onclick="document.getElementById('disclaimer-section').scrollIntoView({behavior:'smooth'})">full disclaimer</a> below.
+          </label>
+        </div>
+        <button class="entry-cta" onclick="startCheck()">
+          Start my clarity check
+          <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M3 8h10M9 4l4 4-4 4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        </button>
+        <p class="entry-privacy">No spam. Your results are sent once to your inbox. Results may vary based on individual effort and circumstances.</p>
+      </div>
+    </div>
+
+    <!-- Full disclaimer on entry screen -->
+    <div id="disclaimer-section" style="margin-top:24px;padding:20px 24px;background:var(--card);border-radius:var(--r-lg);border:1px solid var(--border);box-shadow:var(--shadow)">
+      <div style="font-size:11px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--amber);margin-bottom:10px">Disclaimer</div>
+      <p style="font-size:11.5px;color:var(--muted);line-height:1.7">
+        The content shared through this tool is for <strong style="color:var(--ink)">educational and informational purposes only</strong>, based on personal experience, research, and opinion. It is not intended as legal, financial, business, or professional advice. <strong style="color:var(--ink)">Data Driven Decisions is not a licensed attorney, CPA, or financial advisor.</strong> Always do your own due diligence before making decisions related to business, income, or investments.
+      </p>
+      <p style="font-size:11.5px;color:var(--muted);line-height:1.7;margin-top:8px">
+        Any tools, platforms, or services mentioned may include affiliate links and may change over time. Please confirm availability, pricing, or features directly with the provider. Use official APIs and follow each platform's Terms of Service. Obtain consent before messaging or recording, and comply with applicable laws.
+      </p>
+      <p style="font-size:11.5px;color:var(--muted);line-height:1.7;margin-top:8px">
+        <strong style="color:var(--ink)">Results and outcomes discussed are not guaranteed and may vary</strong> depending on individual effort, context, and external factors. Data Driven Decisions makes no guarantees regarding your specific execution speed, ability to implement these strategies, or any financial results.
+      </p>
+    </div>
+  </div>
+
+  <!-- SCREEN 1: Business type -->
+  <div class="screen" id="screen-1">
+    <div class="step-header">
+      <div class="step-badge"><div class="step-badge-num">1</div>Your business</div>
+      <h2 class="step-title">Let's start with<br>the basics.</h2>
+      <p class="step-sub">This helps us frame your numbers in the right context.</p>
+    </div>
+    <div class="q-block">
+      <div class="q-label">What type of business do you run?</div>
+      <div class="chips" id="g-biz-type">
+        <div class="chip" data-val="service">Service-based</div>
+        <div class="chip" data-val="product">Product / e-commerce</div>
+        <div class="chip" data-val="retail">Retail / bricks &amp; mortar</div>
+        <div class="chip" data-val="trade">Trade / contractor</div>
+        <div class="chip" data-val="coaching">Coaching / consulting</div>
+        <div class="chip" data-val="saas">SaaS / subscription</div>
+      </div>
+    </div>
+    <div class="divider"></div>
+    <div class="q-block">
+      <div class="q-label">How long have you been running?</div>
+      <div class="toggles" id="g-biz-age">
+        <div class="toggle" data-val="under1">Under 1 year</div>
+        <div class="toggle" data-val="1to3">1–3 years</div>
+        <div class="toggle" data-val="3plus">3+ years</div>
+      </div>
+    </div>
+    <div class="nav-row">
+      <button class="btn-back" onclick="goTo(0)">← Back</button>
+      <button class="btn-next" onclick="nextStep(1,['g-biz-type','g-biz-age'])">Continue →</button>
+    </div>
+  </div>
+
+  <!-- SCREEN 2: Money in -->
+  <div class="screen" id="screen-2">
+    <div class="step-header">
+      <div class="step-badge"><div class="step-badge-num">2</div>Money in</div>
+      <h2 class="step-title">Revenue &amp;<br>cash flow.</h2>
+      <p class="step-sub">How well do you know what's coming in?</p>
+    </div>
+    <div class="q-block">
+      <div class="q-label">Do you know last month's total revenue?</div>
+      <div class="toggles" id="g-knows-rev">
+        <div class="toggle" data-val="yes">Yes, exactly</div>
+        <div class="toggle" data-val="approx">Roughly</div>
+        <div class="toggle" data-val="no">Not really</div>
+      </div>
+    </div>
+    <div class="divider"></div>
+    <div class="q-block">
+      <div class="q-label">How does cash feel right now?</div>
+      <div class="chips" id="g-cash-feel">
+        <div class="chip" data-val="comfortable">Comfortable</div>
+        <div class="chip" data-val="tight">Tight</div>
+        <div class="chip" data-val="unpredictable">Up and down — unpredictable</div>
+        <div class="chip" data-val="dontknow">Honestly not sure</div>
+      </div>
+    </div>
+    <div class="divider"></div>
+    <div class="q-block">
+      <div class="q-label">Do clients owe you money right now?</div>
+      <div class="toggles" id="g-overdue">
+        <div class="toggle" data-val="no">No / not applicable</div>
+        <div class="toggle" data-val="few">A few</div>
+        <div class="toggle" data-val="yes">Yes — it's a problem</div>
+      </div>
+    </div>
+    <div class="nav-row">
+      <button class="btn-back" onclick="goTo(1)">← Back</button>
+      <button class="btn-next" onclick="nextStep(2,['g-knows-rev','g-cash-feel','g-overdue'])">Continue →</button>
+    </div>
+  </div>
+
+  <!-- SCREEN 3: Money out -->
+  <div class="screen" id="screen-3">
+    <div class="step-header">
+      <div class="step-badge"><div class="step-badge-num">3</div>Money out</div>
+      <h2 class="step-title">Expenses &amp;<br>profit clarity.</h2>
+      <p class="step-sub">What's going out — and do you know if you're profitable?</p>
+    </div>
+    <div class="q-block">
+      <div class="q-label">Do you know your biggest expense category?</div>
+      <div class="toggles" id="g-knows-exp">
+        <div class="toggle" data-val="yes">Yes</div>
+        <div class="toggle" data-val="no">Not really</div>
+      </div>
+    </div>
+    <div class="divider"></div>
+    <div class="q-block">
+      <div class="q-label">Do you know if you're actually profitable?</div>
+      <div class="chips" id="g-profitable">
+        <div class="chip" data-val="yes">Yes — I track it</div>
+        <div class="chip" data-val="probably">Probably, but I guess</div>
+        <div class="chip" data-val="unsure">I hope so</div>
+        <div class="chip" data-val="no">Honestly no idea</div>
+      </div>
+    </div>
+    <div class="divider"></div>
+    <div class="q-block">
+      <div class="q-label">Any suspected wasted or forgotten spend?</div>
+      <div class="toggles" id="g-waste">
+        <div class="toggle" data-val="no">No — I audit regularly</div>
+        <div class="toggle" data-val="maybe">Maybe</div>
+        <div class="toggle" data-val="yes">Definitely yes</div>
+      </div>
+    </div>
+    <div class="nav-row">
+      <button class="btn-back" onclick="goTo(2)">← Back</button>
+      <button class="btn-next" onclick="nextStep(3,['g-knows-exp','g-profitable','g-waste'])">Continue →</button>
+    </div>
+  </div>
+
+  <!-- SCREEN 4: Systems -->
+  <div class="screen" id="screen-4">
+    <div class="step-header">
+      <div class="step-badge"><div class="step-badge-num">4</div>Your systems</div>
+      <h2 class="step-title">How you're<br>managing right now.</h2>
+      <p class="step-sub">No judgment — this tells us where to focus.</p>
+    </div>
+    <div class="q-block">
+      <div class="q-label">How are you currently managing your books?</div>
+      <div class="chips" id="g-books-how">
+        <div class="chip" data-val="accountant">Accountant handles it</div>
+        <div class="chip" data-val="software">Software (Xero, QBO, etc.)</div>
+        <div class="chip" data-val="spreadsheet">Spreadsheet</div>
+        <div class="chip" data-val="nothing">Nothing formal</div>
+      </div>
+    </div>
+    <div class="divider"></div>
+    <div class="q-block">
+      <div class="q-label">How often do you look at your numbers?</div>
+      <div class="chips" id="g-frequency">
+        <div class="chip" data-val="weekly">Weekly</div>
+        <div class="chip" data-val="monthly">Monthly</div>
+        <div class="chip" data-val="quarterly">Quarterly</div>
+        <div class="chip" data-val="taxtime">Only at tax time</div>
+      </div>
+    </div>
+    <div class="nav-row">
+      <button class="btn-back" onclick="goTo(3)">← Back</button>
+      <button class="btn-next" onclick="nextStep(4,['g-books-how','g-frequency'])">Continue →</button>
+    </div>
+  </div>
+
+  <!-- SCREEN 5: Goals -->
+  <div class="screen" id="screen-5">
+    <div class="step-header">
+      <div class="step-badge"><div class="step-badge-num">5</div>Your goals</div>
+      <h2 class="step-title">What do you<br>most want clarity on?</h2>
+      <p class="step-sub">This shapes your personalized action plan.</p>
+    </div>
+    <div class="q-block">
+      <div class="q-label">Your biggest money headache right now? <span style="font-weight:400;color:var(--hint)">(pick up to 2)</span></div>
+      <div class="chips" id="g-pain">
+        <div class="chip multi" data-val="profit">Am I actually making money?</div>
+        <div class="chip multi" data-val="cashflow">Cash flow — feast or famine</div>
+        <div class="chip multi" data-val="tax">Tax prep stress</div>
+        <div class="chip multi" data-val="pricing">Am I pricing right?</div>
+        <div class="chip multi" data-val="growth">Ready to grow — need clearer numbers</div>
+        <div class="chip multi" data-val="overspend">Feels like money disappears</div>
+      </div>
+    </div>
+    <div class="divider"></div>
+    <div class="q-block">
+      <div class="q-label" style="font-weight:400;color:var(--muted)">What's your goal for the next 90 days? <span style="color:var(--hint)">(optional)</span></div>
+      <textarea class="field-input" id="inp-goal" placeholder="e.g. I want to understand if I can afford to hire, or figure out why cash is always tight by month-end…" rows="3"></textarea>
+    </div>
+    <div style="margin-top:8px">
+      <button class="btn-back" onclick="goTo(4)">← Back</button>
+    </div>
+    <button class="btn-generate" id="gen-btn" onclick="generate()">
+      <svg width="18" height="18" viewBox="0 0 18 18" fill="none"><path d="M9 2l1.6 4.4L15 9l-4.4 1.6L9 15l-1.6-4.4L3 9l4.4-1.6L9 2z" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/></svg>
+      Generate my clarity snapshot
+    </button>
+    <p style="font-size:11px;color:var(--hint);text-align:center;margin-top:12px;line-height:1.5">For educational purposes only. Not financial advice. Results may vary.</p>
+  </div>
+
+  <!-- SCREEN 6: Loading -->
+  <div class="screen" id="screen-6">
+    <div class="loading-wrap">
+      <div class="loading-icon">
+        <svg width="26" height="26" viewBox="0 0 26 26" fill="none">
+          <circle cx="13" cy="13" r="11" stroke="#3589A1" stroke-width="2.5" stroke-dasharray="50 20" stroke-linecap="round"/>
+        </svg>
+      </div>
+      <h2 class="loading-title">Reading your numbers…</h2>
+      <p class="loading-sub">Building your personalized clarity snapshot.<br>This takes about 10 seconds.</p>
+      <div class="loading-dots">
+        <div class="loading-dot"></div>
+        <div class="loading-dot"></div>
+        <div class="loading-dot"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- SCREEN 7: Results -->
+  <div class="screen" id="screen-7">
+    <div class="results-header">
+      <div class="results-eyebrow">Your clarity snapshot</div>
+      <div class="results-name" id="res-name"></div>
+      <div class="results-headline" id="res-headline"></div>
+    </div>
+    <div class="results-body">
+      <p class="snapshot-text" id="res-snapshot"></p>
+      <div class="section-label">Clarity check</div>
+      <div id="res-flags"></div>
+      <div class="section-label">The one number to focus on first</div>
+      <div class="one-number-box">
+        <div class="one-number-icon">→</div>
+        <div>
+          <div class="one-number-label" id="res-one-label"></div>
+          <div class="one-number-why" id="res-one-why"></div>
+        </div>
+      </div>
+      <div class="section-label">Your personalized action plan</div>
+      <div id="res-actions"></div>
+      <div class="section-label">A thought to take with you</div>
+      <div class="reframe-box"><div class="reframe-text" id="res-reframe"></div></div>
+
+      <!-- Full disclaimer on results -->
+      <div class="disclaimer-full" style="margin-top:24px">
+        <div class="disclaimer-full-title">Disclaimer</div>
+        <div class="disclaimer-full-text">
+          The content in this report is for <strong>educational and informational purposes only</strong>, based on personal experience, research, and opinion. It is not intended as legal, financial, business, or professional advice. <strong>Data Driven Decisions is not a licensed attorney, CPA, or financial advisor.</strong> Always do your own due diligence before making decisions related to business, income, or investments. Any tools, platforms, or services mentioned may include affiliate links and may change over time — please confirm directly with the provider. <strong>Results and outcomes are not guaranteed and may vary</strong> depending on individual effort, context, and external factors. We make no guarantees regarding your specific execution speed, ability to implement these strategies, or any financial results.
+        </div>
+      </div>
+
+      <div class="email-sent" id="email-sent-notice" style="display:none">
+        <div class="email-sent-dot"></div>
+        <span>Your results have been sent to <strong id="email-sent-addr"></strong></span>
+      </div>
+    </div>
+
+    <!-- Upsell -->
+    <div class="upsell-section">
+      <div class="upsell-tag">Ready to go deeper?</div>
+      <h3 class="upsell-title">Your numbers deserve<br>more than a snapshot.</h3>
+      <p class="upsell-body">The Books Check Membership gives you a simple monthly system to stay on top of your numbers — without the overwhelm. Or book a Books Review Call and we'll dig into your specific situation together.</p>
+      <div class="upsell-options">
+        <a href="#" id="link-membership" class="upsell-btn-primary">
+          <div>
+            <span class="upsell-btn-primary-label">Books Check Membership — Monthly</span>
+            <span class="upsell-btn-primary-price">$27 / month</span>
+          </div>
+          <span class="upsell-btn-primary-arrow">→</span>
+        </a>
+        <a href="#" id="link-membership-annual" class="upsell-btn-primary" style="background:var(--teal-dark)">
+          <div>
+            <span class="upsell-btn-primary-label">Books Check Membership — Annual</span>
+            <span class="upsell-btn-primary-price">$197 / year — best value, save $127</span>
+          </div>
+          <span class="upsell-btn-primary-arrow">→</span>
+        </a>
+        <a href="#" id="link-call" class="upsell-btn-secondary">
+          <div>
+            <span class="upsell-btn-secondary-label">Books Review Call</span>
+            <span class="upsell-btn-secondary-price">$297 — 60 min, your books, your questions</span>
+          </div>
+          <span class="upsell-btn-secondary-arrow">→</span>
+        </a>
+      </div>
+      <p style="font-size:10.5px;color:rgba(255,255,255,.3);margin-top:16px;line-height:1.6;position:relative;z-index:1">
+        Results from any paid product are not guaranteed and may vary based on individual effort, context, and circumstances. Not financial advice.
+      </p>
+    </div>
+  </div>
+
+</div><!-- /container -->
+</main>
+
+<!-- Footer with full disclaimer -->
+<div class="footer-disclaimer">
+  <p class="footer-disclaimer-text">
+    <strong style="color:rgba(255,255,255,.4)">Disclaimer:</strong> The content shared is for educational and informational purposes only, based on personal experience, research, and opinion. It is not intended as legal, financial, business, or professional advice. Data Driven Decisions is not a licensed attorney, CPA, or financial advisor. Always do your own due diligence before making decisions related to business, income, or investments. Any tools, platforms, or services mentioned may include affiliate links and may change over time. Please confirm availability, pricing, or features directly with the provider. Use official APIs and follow each platform's Terms of Service. Obtain consent before messaging or recording, and comply with applicable laws. Results and outcomes discussed are not guaranteed and may vary depending on individual effort, context, and external factors. We make no guarantees regarding your specific execution speed, ability to implement these strategies, or any financial results.
+  </p>
+</div>
+<footer class="site-footer">
+  <div class="footer-logo">data<span>driven</span>.coach</div>
+  <div class="footer-copy">© Data Driven Decisions. For educational and informational purposes only.</div>
+</footer>
+
+</div><!-- /app -->
+
+<script>
+// ── CONFIG — replace these values before going live ─────────────────────────
+//
+// HOW TO SET UP EMAILJS (free tier sends 200 emails/month):
+//  1. Go to https://emailjs.com and create a free account
+//  2. Add Email Service: Dashboard → Email Services → Add New Service → Gmail
+//     Copy the Service ID (looks like: service_abc1234)
+//  3. Create Email Template: Dashboard → Email Templates → Create New Template
+//     Use these exact variable names in your template:
+//       {{to_name}}           — recipient's first name
+//       {{to_email}}          — recipient's email address
+//       {{headline}}          — snapshot headline
+//       {{snapshot}}          — 2-sentence assessment
+//       {{flags_html}}        — red/amber/green flags (HTML)
+//       {{one_number}}        — the one metric to track
+//       {{one_why}}           — why that metric
+//       {{actions_html}}      — 3-step action plan (HTML)
+//       {{reframe}}           — closing reframe quote
+//       {{membership_link}}   — monthly membership URL
+//       {{annual_link}}       — annual membership URL
+//       {{call_link}}         — books review call URL
+//       {{disclaimer_short}}  — short disclaimer text
+//     Set "To Email" field to: {{to_email}}
+//     Copy the Template ID (looks like: template_xyz7890)
+//  4. Go to Account → General → Public Key
+//     Copy your Public Key (looks like: AbCdEfGhIjKlMnOp)
+//  5. Paste all three below and re-upload the file to Lovable
+
+const EMAILJS_SERVICE_ID  = 'YOUR_SERVICE_ID';
+const EMAILJS_TEMPLATE_ID = 'YOUR_TEMPLATE_ID';
+const EMAILJS_PUBLIC_KEY  = 'YOUR_PUBLIC_KEY';
+
+// ── Stripe payment links ─────────────────────────────────────────────────────
+const MEMBERSHIP_LINK        = 'https://buy.stripe.com/28EbJ165dgYSamK9s8bV603';
+const MEMBERSHIP_ANNUAL_LINK = 'https://buy.stripe.com/aFa00jgJR8smfH4fQwbV604';
+const CALL_LINK              = 'https://buy.stripe.com/28EaEXdxF4c6dyWfQwbV605';
+// ─────────────────────────────────────────────────────────────────────────────
+// ─────────────────────────────────────────────────────────────────────────────
+
+const DISCLAIMER_SHORT = 'For educational and informational purposes only. Not financial, legal, or professional advice. Data Driven Decisions is not a licensed CPA or financial advisor. Results are not guaranteed and may vary.';
+
+const state = {
+  name:'', email:'',
+  'g-biz-type':null,'g-biz-age':null,
+  'g-knows-rev':null,'g-cash-feel':null,'g-overdue':null,
+  'g-knows-exp':null,'g-profitable':null,'g-waste':null,
+  'g-books-how':null,'g-frequency':null,
+  'g-pain':[],goal:''
+};
+let currentScreen = 0;
+
+// Only init EmailJS if properly configured
+const emailJsReady = EMAILJS_PUBLIC_KEY !== 'YOUR_PUBLIC_KEY';
+if (emailJsReady) { emailjs.init(EMAILJS_PUBLIC_KEY); }
+
+document.getElementById('link-membership').href        = MEMBERSHIP_LINK;
+document.getElementById('link-membership-annual').href = MEMBERSHIP_ANNUAL_LINK;
+document.getElementById('link-call').href              = CALL_LINK;
+
+// Chip / toggle interactions
+document.querySelectorAll('.chips, .toggles').forEach(group => {
+  group.addEventListener('click', e => {
+    const chip = e.target.closest('.chip,.toggle');
+    if (!chip) return;
+    const id = group.id;
+    const isMulti = chip.classList.contains('multi');
+    if (isMulti) {
+      const sels = group.querySelectorAll('.sel');
+      if (chip.classList.contains('sel')) { chip.classList.remove('sel'); }
+      else if (sels.length < 2) { chip.classList.add('sel'); }
+      state[id] = Array.from(group.querySelectorAll('.sel')).map(c => c.dataset.val);
+    } else {
+      group.querySelectorAll('.chip,.toggle').forEach(c => c.classList.remove('sel'));
+      chip.classList.add('sel');
+      state[id] = chip.dataset.val;
+    }
+    group.classList.remove('field-err');
+  });
+});
+
+function goTo(n) {
+  document.getElementById('screen-' + currentScreen).classList.remove('active');
+  document.getElementById('screen-' + n).classList.add('active');
+  currentScreen = n;
+  document.getElementById('progress').style.width = Math.round(n / 6 * 100) + '%';
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+
+function startCheck() {
+  const nameEl  = document.getElementById('inp-name');
+  const emailEl = document.getElementById('inp-email');
+  const consent = document.getElementById('consent-check');
+  let ok = true;
+
+  if (!nameEl.value.trim()) {
+    nameEl.classList.add('error');
+    nameEl.addEventListener('input', () => nameEl.classList.remove('error'), {once:true});
+    ok = false;
+  }
+  if (!emailEl.value.trim() || !emailEl.value.includes('@')) {
+    emailEl.classList.add('error');
+    emailEl.addEventListener('input', () => emailEl.classList.remove('error'), {once:true});
+    ok = false;
+  }
+  if (!consent.checked) {
+    consent.closest('.consent-row').style.outline = '2px solid var(--red)';
+    consent.closest('.consent-row').style.borderRadius = '6px';
+    consent.closest('.consent-row').style.padding = '6px';
+    setTimeout(() => {
+      consent.closest('.consent-row').style.outline = '';
+      consent.closest('.consent-row').style.padding = '';
+    }, 1500);
+    ok = false;
+  }
+
+  if (!ok) return;
+  state.name  = nameEl.value.trim();
+  state.email = emailEl.value.trim();
+  goTo(1);
+}
+
+function nextStep(from, groups) {
+  let ok = true;
+  groups.forEach(gid => {
+    const val = state[gid];
+    if (!val || (Array.isArray(val) && val.length === 0)) {
+      const el = document.getElementById(gid);
+      el.classList.add('field-err','shake');
+      el.addEventListener('animationend', () => el.classList.remove('shake'), {once:true});
+      ok = false;
+    }
+  });
+  if (ok) goTo(from + 1);
+}
+
+async function generate() {
+  const painVal = state['g-pain'];
+  if (!painVal || painVal.length === 0) {
+    const el = document.getElementById('g-pain');
+    el.classList.add('field-err','shake');
+    el.addEventListener('animationend', () => el.classList.remove('shake'), {once:true});
+    return;
+  }
+  state.goal = document.getElementById('inp-goal').value.trim();
+  document.getElementById('gen-btn').disabled = true;
+  goTo(6);
+
+  const bizLabels = {
+    service:'service-based business', product:'product or e-commerce business',
+    retail:'retail or bricks-and-mortar business', trade:'trade or contractor business',
+    coaching:'coaching or consulting practice', saas:'SaaS or subscription business'
+  };
+  const painLabels = {
+    profit:"not knowing if I'm actually profitable",
+    cashflow:"unpredictable cash flow — feast or famine",
+    tax:"tax prep stress",
+    pricing:"uncertainty about whether I'm pricing right",
+    growth:"needing clearer numbers to grow confidently",
+    overspend:"feeling like money disappears"
+  };
+  const pains = (Array.isArray(painVal) ? painVal : [painVal])
+    .map(p => painLabels[p] || p).join(' and ');
+
+  const prompt = `You are a plain-speaking small business financial educator named Katy from Data Driven Decisions (datadriven.coach). Your philosophy is "simplify to magnify" — strip away noise to give one clear next step at a time. Speak warmly and directly like a trusted advisor. Use US English. No jargon. Note: your output is for educational and informational purposes only — not financial advice.
+
+Business owner: ${state.name}
+Business type: ${bizLabels[state['g-biz-type']] || state['g-biz-type']}
+In business: ${state['g-biz-age']}
+Knows last month revenue: ${state['g-knows-rev']}
+Cash flow feeling: ${state['g-cash-feel']}
+Overdue invoices: ${state['g-overdue']}
+Knows biggest expense: ${state['g-knows-exp']}
+Knows if profitable: ${state['g-profitable']}
+Suspects wasted spending: ${state['g-waste']}
+Books managed via: ${state['g-books-how']}
+Reviews numbers: ${state['g-frequency']}
+Biggest pain: ${pains}
+90-day goal: ${state.goal || 'not specified'}
+
+Respond ONLY in this exact JSON (no markdown, no backticks, no preamble):
+{
+  "headline": "One punchy honest sentence max 12 words naming where they are right now",
+  "snapshot": "2 honest warm sentences. Real assessment of their financial clarity. Not harsh, not fluffy.",
+  "flags": [
+    {"level": "red", "text": "one specific flag max 20 words"},
+    {"level": "amber", "text": "one specific flag max 20 words"},
+    {"level": "green", "text": "one genuine positive max 20 words"}
+  ],
+  "one_number": "Single metric name to focus on first",
+  "one_why": "Why this metric in one sentence",
+  "actions": [
+    {"title": "Action title max 8 words", "detail": "How to do it in one clear sentence"},
+    {"title": "Action title max 8 words", "detail": "How to do it in one clear sentence"},
+    {"title": "Action title max 8 words", "detail": "How to do it in one clear sentence"}
+  ],
+  "reframe": "One empowering sentence — honest encouragement, not toxic positivity"
+}`;
+
+  try {
+    const resp = await fetch('https://api.anthropic.com/v1/messages', {
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({
+        model:'claude-sonnet-4-20250514',
+        max_tokens:1000,
+        messages:[{role:'user',content:prompt}]
+      })
+    });
+    const data = await resp.json();
+    const text = data.content.map(i => i.text || '').join('');
+    const r = JSON.parse(text.replace(/```json|```/g,'').trim());
+    renderResults(r);
+    sendResultEmail(r);
+    goTo(7);
+  } catch(err) {
+    console.error(err);
+    document.getElementById('res-headline').textContent = 'Something went wrong — please refresh and try again.';
+    goTo(7);
+  }
+}
+
+function renderResults(r) {
+  document.getElementById('res-name').textContent = 'Hi ' + state.name + ' — here\'s your snapshot';
+  document.getElementById('res-headline').textContent = r.headline;
+  document.getElementById('res-snapshot').textContent = r.snapshot;
+
+  const flagsEl = document.getElementById('res-flags');
+  flagsEl.innerHTML = '';
+  r.flags.forEach(f => {
+    const d = document.createElement('div');
+    d.className = 'flag-item ' + f.level;
+    d.innerHTML = '<div class="flag-dot ' + f.level + '"></div><div class="flag-text">' + f.text + '</div>';
+    flagsEl.appendChild(d);
+  });
+
+  document.getElementById('res-one-label').textContent = r.one_number;
+  document.getElementById('res-one-why').textContent = r.one_why;
+
+  const actEl = document.getElementById('res-actions');
+  actEl.innerHTML = '';
+  r.actions.forEach((a,i) => {
+    const d = document.createElement('div');
+    d.className = 'action-item';
+    d.innerHTML = '<div class="action-num">'+(i+1)+'</div><div><div class="action-title">'+a.title+'</div><div class="action-detail">'+a.detail+'</div></div>';
+    actEl.appendChild(d);
+  });
+
+  document.getElementById('res-reframe').textContent = '\u201c' + r.reframe + '\u201d';
+}
+
+async function sendResultEmail(r) {
+  // If EmailJS isn't configured yet, show a setup reminder instead of an error
+  if (!emailJsReady) {
+    const notice = document.getElementById('email-sent-notice');
+    notice.style.background = 'var(--amber-bg)';
+    notice.style.borderColor = 'rgba(184,124,18,.2)';
+    notice.style.color = 'var(--amber)';
+    notice.querySelector('.email-sent-dot').style.background = 'var(--amber)';
+    notice.querySelector('span').innerHTML = 'Email not yet configured — <strong>see setup notes in the HTML file</strong> to connect EmailJS.';
+    notice.style.display = 'flex';
+    return;
+  }
+
+  const flagsHtml = r.flags.map(f => {
+    const bg  = f.level==='red'?'#FDF0F0':f.level==='amber'?'#FEF8EC':'#EDF6E8';
+    const col = f.level==='red'?'#C94040':f.level==='amber'?'#B87C12':'#2D6A1F';
+    return '<div style="padding:8px 12px;margin-bottom:6px;background:'+bg+';border-radius:6px;font-family:sans-serif;font-size:14px;"><strong style="color:'+col+'">'+(f.level==='red'?'🔴':f.level==='amber'?'🟡':'🟢')+' '+f.level.toUpperCase()+'</strong> — '+f.text+'</div>';
+  }).join('');
+
+  const actionsHtml = r.actions.map((a,i) =>
+    '<div style="padding:10px 0;border-bottom:1px solid #E4E1DA;font-family:sans-serif;font-size:14px;"><strong style="color:#1C1C1C">'+(i+1)+'. '+a.title+'</strong><br><span style="color:#5A6370">'+a.detail+'</span></div>'
+  ).join('');
+
+  const FULL_DISCLAIMER = 'The content in this report is for educational and informational purposes only, based on personal experience, research, and opinion. It is not intended as legal, financial, business, or professional advice. Data Driven Decisions is not a licensed attorney, CPA, or financial advisor. Always do your own due diligence before making decisions related to business, income, or investments. Any tools, platforms, or services mentioned may include affiliate links and may change over time. Results and outcomes are not guaranteed and may vary depending on individual effort, context, and external factors.';
+
+  try {
+    await emailjs.send(EMAILJS_SERVICE_ID, EMAILJS_TEMPLATE_ID, {
+      to_email:         state.email,
+      to_name:          state.name,
+      headline:         r.headline,
+      snapshot:         r.snapshot,
+      flags_html:       flagsHtml,
+      one_number:       r.one_number,
+      one_why:          r.one_why,
+      actions_html:     actionsHtml,
+      reframe:          r.reframe,
+      membership_link:  MEMBERSHIP_LINK,
+      annual_link:      MEMBERSHIP_ANNUAL_LINK,
+      call_link:        CALL_LINK,
+      disclaimer_short: DISCLAIMER_SHORT,
+      disclaimer_full:  FULL_DISCLAIMER
+    });
+    document.getElementById('email-sent-addr').textContent = state.email;
+    document.getElementById('email-sent-notice').style.display = 'flex';
+  } catch(err) {
+    // Email failed — show a soft notice, don't break the experience
+    const notice = document.getElementById('email-sent-notice');
+    notice.style.background = 'var(--amber-bg)';
+    notice.style.borderColor = 'rgba(184,124,18,.2)';
+    notice.style.color = 'var(--amber)';
+    notice.querySelector('.email-sent-dot').style.background = 'var(--amber)';
+    notice.querySelector('span').innerHTML = 'We couldn\'t send your email right now — but your results are here on screen. Try copying or screenshotting them.';
+    notice.style.display = 'flex';
+  }
+}
+</script>
+</body>
+</html>
