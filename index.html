@@ -9,6 +9,7 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
 <link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;1,9..40,300&display=swap" rel="stylesheet" />
 <script src="https://cdn.jsdelivr.net/npm/@emailjs/browser@3/dist/email.min.js"></script>
+<!-- EmailJS removed — using Resend via Cloudflare Worker -->
 <style>
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
 :root{
@@ -531,43 +532,34 @@ textarea.field-input{height:auto;min-height:80px;padding:12px 16px;resize:vertic
 </div><!-- /app -->
 
 <script>
-// ── CONFIG — replace these values before going live ─────────────────────────
+// ═══════════════════════════════════════════════════════════════════════════
+// SETUP INSTRUCTIONS — fill in the 4 values below, then upload to GitHub
+// ═══════════════════════════════════════════════════════════════════════════
 //
-// HOW TO SET UP EMAILJS (free tier sends 200 emails/month):
-//  1. Go to https://emailjs.com and create a free account
-//  2. Add Email Service: Dashboard → Email Services → Add New Service → Gmail
-//     Copy the Service ID (looks like: service_abc1234)
-//  3. Create Email Template: Dashboard → Email Templates → Create New Template
-//     Use these exact variable names in your template:
-//       {{to_name}}           — recipient's first name
-//       {{to_email}}          — recipient's email address
-//       {{headline}}          — snapshot headline
-//       {{snapshot}}          — 2-sentence assessment
-//       {{flags_html}}        — red/amber/green flags (HTML)
-//       {{one_number}}        — the one metric to track
-//       {{one_why}}           — why that metric
-//       {{actions_html}}      — 3-step action plan (HTML)
-//       {{reframe}}           — closing reframe quote
-//       {{membership_link}}   — monthly membership URL
-//       {{annual_link}}       — annual membership URL
-//       {{call_link}}         — books review call URL
-//       {{disclaimer_short}}  — short disclaimer text
-//     Set "To Email" field to: {{to_email}}
-//     Copy the Template ID (looks like: template_xyz7890)
-//  4. Go to Account → General → Public Key
-//     Copy your Public Key (looks like: AbCdEfGhIjKlMnOp)
-//  5. Paste all three below and re-upload the file to Lovable
+// ── STEP 1: ANTHROPIC API KEY (powers the AI results) ───────────────────
+//   1. Go to console.anthropic.com and sign in
+//   2. Click "API Keys" in the left menu → "Create Key"
+//   3. Name it anything (e.g. clear-the-noise)
+//   4. Copy the key — it starts with sk-ant-api03-
+//   5. Paste it below, replacing YOUR_ANTHROPIC_API_KEY
+//   ⚠ Also set a spend limit: console.anthropic.com → Billing → Set Limit
+//     $20–50/month is plenty for a free lead gen tool
+//
+const ANTHROPIC_API_KEY = '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';
 
-const EMAILJS_SERVICE_ID  = 'YOUR_SERVICE_ID';
-const EMAILJS_TEMPLATE_ID = 'YOUR_TEMPLATE_ID';
-const EMAILJS_PUBLIC_KEY  = 'YOUR_PUBLIC_KEY';
+//
+// ── EMAILJS REMOVED — emails now sent via Resend through Cloudflare Worker ──
+// Worker URL is hardcoded in the sendResultEmail function below
+//
 
-// ── Stripe payment links ─────────────────────────────────────────────────────
+//
+// ── STRIPE LINKS (already filled in — do not change) ────────────────────
+//
 const MEMBERSHIP_LINK        = 'https://buy.stripe.com/28EbJ165dgYSamK9s8bV603';
 const MEMBERSHIP_ANNUAL_LINK = 'https://buy.stripe.com/aFa00jgJR8smfH4fQwbV604';
 const CALL_LINK              = 'https://buy.stripe.com/28EaEXdxF4c6dyWfQwbV605';
-// ─────────────────────────────────────────────────────────────────────────────
-// ─────────────────────────────────────────────────────────────────────────────
+//
+// ═══════════════════════════════════════════════════════════════════════════
 
 const DISCLAIMER_SHORT = 'For educational and informational purposes only. Not financial, legal, or professional advice. Data Driven Decisions is not a licensed CPA or financial advisor. Results are not guaranteed and may vary.';
 
@@ -582,9 +574,7 @@ const state = {
 let currentScreen = 0;
 
 // Only init EmailJS if properly configured
-const emailJsReady = EMAILJS_PUBLIC_KEY !== 'YOUR_PUBLIC_KEY';
-if (emailJsReady) { emailjs.init(EMAILJS_PUBLIC_KEY); }
-
+const emailJsReady = false; // Using Resend via Worker instead
 document.getElementById('link-membership').href        = MEMBERSHIP_LINK;
 document.getElementById('link-membership-annual').href = MEMBERSHIP_ANNUAL_LINK;
 document.getElementById('link-call').href              = CALL_LINK;
@@ -731,7 +721,12 @@ Respond ONLY in this exact JSON (no markdown, no backticks, no preamble):
   try {
     const resp = await fetch('https://api.anthropic.com/v1/messages', {
       method:'POST',
-      headers:{'Content-Type':'application/json'},
+      headers:{
+        'Content-Type':'application/json',
+        'x-api-key': ANTHROPIC_API_KEY,
+        'anthropic-version': '2023-06-01',
+        'anthropic-dangerous-direct-browser-access': 'true'
+      },
       body: JSON.stringify({
         model:'claude-sonnet-4-20250514',
         max_tokens:1000,
@@ -739,6 +734,13 @@ Respond ONLY in this exact JSON (no markdown, no backticks, no preamble):
       })
     });
     const data = await resp.json();
+    if (!resp.ok) {
+      console.error('API error:', data);
+      document.getElementById('res-headline').textContent = 'Something went wrong — please refresh and try again.';
+      document.getElementById('res-snapshot').textContent = 'Error: ' + (data?.error?.message || resp.status + ' ' + resp.statusText);
+      goTo(7);
+      return;
+    }
     const text = data.content.map(i => i.text || '').join('');
     const r = JSON.parse(text.replace(/```json|```/g,'').trim());
     renderResults(r);
@@ -747,6 +749,7 @@ Respond ONLY in this exact JSON (no markdown, no backticks, no preamble):
   } catch(err) {
     console.error(err);
     document.getElementById('res-headline').textContent = 'Something went wrong — please refresh and try again.';
+    document.getElementById('res-snapshot').textContent = 'Technical error: ' + err.message;
     goTo(7);
   }
 }
@@ -781,17 +784,7 @@ function renderResults(r) {
 }
 
 async function sendResultEmail(r) {
-  // If EmailJS isn't configured yet, show a setup reminder instead of an error
-  if (!emailJsReady) {
-    const notice = document.getElementById('email-sent-notice');
-    notice.style.background = 'var(--amber-bg)';
-    notice.style.borderColor = 'rgba(184,124,18,.2)';
-    notice.style.color = 'var(--amber)';
-    notice.querySelector('.email-sent-dot').style.background = 'var(--amber)';
-    notice.querySelector('span').innerHTML = 'Email not yet configured — <strong>see setup notes in the HTML file</strong> to connect EmailJS.';
-    notice.style.display = 'flex';
-    return;
-  }
+  const WORKER_URL = 'https://datadrive-email.katy-d41.workers.dev';
 
   const flagsHtml = r.flags.map(f => {
     const bg  = f.level==='red'?'#FDF0F0':f.level==='amber'?'#FEF8EC':'#EDF6E8';
@@ -803,35 +796,41 @@ async function sendResultEmail(r) {
     '<div style="padding:10px 0;border-bottom:1px solid #E4E1DA;font-family:sans-serif;font-size:14px;"><strong style="color:#1C1C1C">'+(i+1)+'. '+a.title+'</strong><br><span style="color:#5A6370">'+a.detail+'</span></div>'
   ).join('');
 
-  const FULL_DISCLAIMER = 'The content in this report is for educational and informational purposes only, based on personal experience, research, and opinion. It is not intended as legal, financial, business, or professional advice. Data Driven Decisions is not a licensed attorney, CPA, or financial advisor. Always do your own due diligence before making decisions related to business, income, or investments. Any tools, platforms, or services mentioned may include affiliate links and may change over time. Results and outcomes are not guaranteed and may vary depending on individual effort, context, and external factors.';
-
   try {
-    await emailjs.send(EMAILJS_SERVICE_ID, EMAILJS_TEMPLATE_ID, {
-      to_email:         state.email,
-      to_name:          state.name,
-      headline:         r.headline,
-      snapshot:         r.snapshot,
-      flags_html:       flagsHtml,
-      one_number:       r.one_number,
-      one_why:          r.one_why,
-      actions_html:     actionsHtml,
-      reframe:          r.reframe,
-      membership_link:  MEMBERSHIP_LINK,
-      annual_link:      MEMBERSHIP_ANNUAL_LINK,
-      call_link:        CALL_LINK,
-      disclaimer_short: DISCLAIMER_SHORT,
-      disclaimer_full:  FULL_DISCLAIMER
+    const resp = await fetch(WORKER_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        to_email:         state.email,
+        to_name:          state.name,
+        headline:         r.headline,
+        snapshot:         r.snapshot,
+        flags_html:       flagsHtml,
+        one_number:       r.one_number,
+        one_why:          r.one_why,
+        actions_html:     actionsHtml,
+        reframe:          r.reframe,
+        membership_link:  MEMBERSHIP_LINK,
+        annual_link:      MEMBERSHIP_ANNUAL_LINK,
+        call_link:        CALL_LINK,
+        disclaimer_short: DISCLAIMER_SHORT
+      })
     });
-    document.getElementById('email-sent-addr').textContent = state.email;
-    document.getElementById('email-sent-notice').style.display = 'flex';
+
+    if (resp.ok) {
+      document.getElementById('email-sent-addr').textContent = state.email;
+      document.getElementById('email-sent-notice').style.display = 'flex';
+    } else {
+      throw new Error('Worker returned ' + resp.status);
+    }
   } catch(err) {
-    // Email failed — show a soft notice, don't break the experience
+    console.warn('Email send failed:', err);
     const notice = document.getElementById('email-sent-notice');
     notice.style.background = 'var(--amber-bg)';
     notice.style.borderColor = 'rgba(184,124,18,.2)';
     notice.style.color = 'var(--amber)';
     notice.querySelector('.email-sent-dot').style.background = 'var(--amber)';
-    notice.querySelector('span').innerHTML = 'We couldn\'t send your email right now — but your results are here on screen. Try copying or screenshotting them.';
+    notice.querySelector('span').innerHTML = 'We couldn\'t send your email right now — your results are here on screen. Try screenshotting them.';
     notice.style.display = 'flex';
   }
 }
