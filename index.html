@@ -536,16 +536,11 @@ textarea.field-input{height:auto;min-height:80px;padding:12px 16px;resize:vertic
 // SETUP INSTRUCTIONS — fill in the 4 values below, then upload to GitHub
 // ═══════════════════════════════════════════════════════════════════════════
 //
-// ── STEP 1: ANTHROPIC API KEY (powers the AI results) ───────────────────
-//   1. Go to console.anthropic.com and sign in
-//   2. Click "API Keys" in the left menu → "Create Key"
-//   3. Name it anything (e.g. clear-the-noise)
-//   4. Copy the key — it starts with sk-ant-api03-
-//   5. Paste it below, replacing YOUR_ANTHROPIC_API_KEY
-//   ⚠ Also set a spend limit: console.anthropic.com → Billing → Set Limit
-//     $20–50/month is plenty for a free lead gen tool
-//
-const ANTHROPIC_API_KEY = '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';
+// ── STEP 1: ALL API KEYS ARE IN YOUR CLOUDFLARE WORKER ─────────────────
+//   No API keys needed in this file.
+//   Anthropic key → saved as ANTHROPIC_API_KEY in Cloudflare Worker
+//   Resend key    → saved as RESEND_API_KEY in Cloudflare Worker
+//   Worker URL    → https://datadrive-email.katy-d41.workers.dev
 
 //
 // ── EMAILJS REMOVED — emails now sent via Resend through Cloudflare Worker ──
@@ -719,30 +714,20 @@ Respond ONLY in this exact JSON (no markdown, no backticks, no preamble):
 }`;
 
   try {
-    const resp = await fetch('https://api.anthropic.com/v1/messages', {
+    const resp = await fetch('https://datadrive-email.katy-d41.workers.dev/generate', {
       method:'POST',
-      headers:{
-        'Content-Type':'application/json',
-        'x-api-key': ANTHROPIC_API_KEY,
-        'anthropic-version': '2023-06-01',
-        'anthropic-dangerous-direct-browser-access': 'true'
-      },
-      body: JSON.stringify({
-        model:'claude-sonnet-4-20250514',
-        max_tokens:1000,
-        messages:[{role:'user',content:prompt}]
-      })
+      headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({ prompt })
     });
     const data = await resp.json();
     if (!resp.ok) {
-      console.error('API error:', data);
+      console.error('Worker error:', data);
       document.getElementById('res-headline').textContent = 'Something went wrong — please refresh and try again.';
-      document.getElementById('res-snapshot').textContent = 'Error: ' + (data?.error?.message || resp.status + ' ' + resp.statusText);
+      document.getElementById('res-snapshot').textContent = 'Error: ' + (data?.error || resp.status);
       goTo(7);
       return;
     }
-    const text = data.content.map(i => i.text || '').join('');
-    const r = JSON.parse(text.replace(/```json|```/g,'').trim());
+    const r = data;
     renderResults(r);
     sendResultEmail(r);
     goTo(7);
